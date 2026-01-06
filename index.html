@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BSA - BigSaleApple</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-theme-bg: var(--tg-theme-bg-color, #fff);
+            --tg-theme-text: var(--tg-theme-text-color, #000);
+            --tg-theme-hint: var(--tg-theme-hint-color, #999);
+            --tg-theme-button: var(--tg-theme-button-color, #007aff);
+            --tg-theme-button-text: var(--tg-theme-button-text-color, #fff);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg);
+            color: var(--tg-theme-text);
+            margin: 0; padding: 15px;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .catalog {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .card {
+            background: rgba(128, 128, 128, 0.1);
+            border-radius: 15px;
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .card img {
+            width: 100%;
+            border-radius: 10px;
+            aspect-ratio: 1;
+            object-fit: cover;
+        }
+        .price {
+            font-weight: bold;
+            color: #2ecc71;
+            margin: 10px 0;
+        }
+        .buy-btn {
+            background: var(--tg-theme-button);
+            color: var(--tg-theme-button-text);
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            width: 100%;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>BigSaleApple</h1>
+    </div>
+    <div id="catalog" class="catalog">
+        </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // ЗАМЕНИ НА СВОЙ IP
+        const API_URL = "http://93.123.84.2:8000/api/products";
+
+        async function loadProducts() {
+            try {
+                const response = await fetch(API_URL);
+                const products = await response.json();
+                const catalogHtml = document.getElementById('catalog');
+                
+                catalogHtml.innerHTML = products.map(p => `
+                    <div class="card">
+                        <img src="${p.IMAGE || 'https://via.placeholder.com/150'}" alt="${p.NAME}">
+                        <h3>${p.NAME}</h3>
+                        <p>${p.DESCRIPTION}</p>
+                        <div class="price">${p.PRICE.toLocaleString()} ₽</div>
+                        <button class="buy-btn" onclick="order('${p.NAME}')">Купить</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error("Ошибка загрузки:", e);
+            }
+        }
+
+        function order(name) {
+            tg.sendData("Заказ: " + name);
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>
