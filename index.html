@@ -114,9 +114,8 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // ЗАМЕНИ НА СВОЮ АКТУАЛЬНУЮ ССЫЛКУ ИЗ SCREEN
-    const API_URL = "https://roberts-hansen-smoke-trans.trycloudflare.com/api/products";
-
+    // ТВОЯ ССЫЛКА ИЗ SCREEN
+    const API_URL = "https://opposite-eugene-andy-interview.trycloudflare.com/api/products";
 
     let allProducts = [];
 
@@ -125,39 +124,51 @@
             const res = await fetch(API_URL);
             allProducts = await res.json();
             render(allProducts);
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error("Ошибка загрузки:", e); 
+        }
     }
 
     function render(items) {
         const container = document.getElementById('catalog');
+        // Если товаров нет, выведем подсказку
+        if (items.length === 0) {
+            container.innerHTML = "<p style='text-align:center; grid-column: 1/3;'>Товары не найдены. Проверьте категории в таблице.</p>";
+            return;
+        }
+        
         container.innerHTML = items.map(p => `
             <div class="card">
                 <img src="${p.IMAGE || 'https://via.placeholder.com/150'}" alt="${p.NAME}">
                 <h3>${p.NAME}</h3>
                 <p>${p.DESCRIPTION}</p>
-                <div class="price">${p.PRICE.toLocaleString()} ₽</div>
-                <button class="buy-btn" onclick="buy('${p.NAME}')">Купить</button>
+                <div class="price">${p.PRICE ? p.PRICE.toLocaleString() : 0} ₽</div>
+                <button class="buy-btn" onclick="book('${p.NAME}')">Забронировать</button>
             </div>
         `).join('');
     }
 
     function filterCat(cat) {
-        // Подсветка кнопок
         document.querySelectorAll('.cat-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.innerText === cat || (cat === 'Все' && btn.innerText === 'Все'));
+            btn.classList.toggle('active', btn.innerText === cat);
         });
 
         if (cat === 'Все') {
             render(allProducts);
         } else {
+            // Фильтруем по столбцу CATEGORY из таблицы
             const filtered = allProducts.filter(p => p.CATEGORY === cat);
             render(filtered);
         }
     }
 
-    function buy(name) {
-        tg.sendData("Order:" + name);
-        tg.close();
+    function book(name) {
+        // Формируем ссылку на твой профиль с текстом
+        const text = encodeURIComponent("Здравствуйте! Хочу забронировать: " + name);
+        const url = "https://t.me/kkk1rya?text=" + text;
+        
+        // Открываем ссылку прямо в Telegram
+        tg.openTelegramLink(url);
     }
 
     load();
