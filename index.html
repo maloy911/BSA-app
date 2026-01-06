@@ -2,99 +2,165 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BSA - BigSaleApple</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --tg-theme-bg: var(--tg-theme-bg-color, #fff);
-            --tg-theme-text: var(--tg-theme-text-color, #000);
-            --tg-theme-hint: var(--tg-theme-hint-color, #999);
-            --tg-theme-button: var(--tg-theme-button-color, #007aff);
-            --tg-theme-button-text: var(--tg-theme-button-text-color, #fff);
+            --tg-theme-bg: var(--tg-theme-bg-color, #f5f5f7);
+            --tg-theme-text: var(--tg-theme-text-color, #1d1d1f);
+            --accent-color: #0071e3;
+            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
         }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--tg-theme-bg);
             color: var(--tg-theme-text);
-            margin: 0; padding: 15px;
+            margin: 0; padding: 0;
+            overflow-x: hidden;
         }
-        .header { text-align: center; margin-bottom: 20px; }
+
+        .header { padding: 20px; text-align: center; }
+        .header h1 { font-size: 24px; font-weight: 600; margin: 0; }
+
+        /* Категории */
+        .categories {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 20px;
+            gap: 10px;
+            scrollbar-width: none;
+        }
+        .categories::-webkit-scrollbar { display: none; }
+        
+        .cat-btn {
+            background: var(--card-bg);
+            border: 1px solid rgba(0,0,0,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-size: 14px;
+            cursor: pointer;
+            color: var(--tg-theme-text);
+        }
+        .cat-btn.active {
+            background: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+        }
+
+        /* Сетка товаров */
         .catalog {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
+            padding: 15px;
         }
+
         .card {
-            background: rgba(128, 128, 128, 0.1);
-            border-radius: 15px;
-            padding: 10px;
-            text-align: center;
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
         }
+        .card:active { transform: scale(0.97); }
+
         .card img {
             width: 100%;
-            border-radius: 10px;
             aspect-ratio: 1;
-            object-fit: cover;
+            object-fit: contain;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            background: #fff;
         }
-        .price {
-            font-weight: bold;
-            color: #2ecc71;
-            margin: 10px 0;
-        }
+
+        .card h3 { font-size: 15px; margin: 5px 0; font-weight: 600; }
+        .card p { font-size: 12px; color: #86868b; margin: 0 0 10px 0; flex-grow: 1; }
+        
+        .price { font-size: 16px; font-weight: 700; color: var(--tg-theme-text); margin-bottom: 10px; }
+
         .buy-btn {
-            background: var(--tg-theme-button);
-            color: var(--tg-theme-button-text);
+            background: var(--accent-color);
+            color: #fff;
             border: none;
-            padding: 8px;
-            border-radius: 8px;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 600;
             width: 100%;
-            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>BigSaleApple</h1>
+
+<div class="header">
+    <h1>BigSaleApple</h1>
+</div>
+
+<div class="categories" id="categories">
+    <button class="cat-btn active" onclick="filterCat('Все')">Все</button>
+    <button class="cat-btn" onclick="filterCat('Телефоны')">iPhone</button>
+    <button class="cat-btn" onclick="filterCat('Ноутбуки')">MacBook</button>
+    <button class="cat-btn" onclick="filterCat('Аксессуары')">Аксессуары</button>
+</div>
+
+<div class="catalog" id="catalog">
     </div>
-    <div id="catalog" class="catalog">
-        </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
 
-        // ЗАМЕНИ НА СВОЙ IP
-        const API_URL = "https://roberts-hansen-smoke-trans.trycloudflare.com/api/products";
+    // ЗАМЕНИ НА СВОЮ АКТУАЛЬНУЮ ССЫЛКУ ИЗ SCREEN
+    const API_URL = "https://roberts-hansen-smoke-trans.trycloudflare.com/api/products";
 
-        async function loadProducts() {
-            try {
-                const response = await fetch(API_URL);
-                const products = await response.json();
-                const catalogHtml = document.getElementById('catalog');
-                
-                catalogHtml.innerHTML = products.map(p => `
-                    <div class="card">
-                        <img src="${p.IMAGE || 'https://via.placeholder.com/150'}" alt="${p.NAME}">
-                        <h3>${p.NAME}</h3>
-                        <p>${p.DESCRIPTION}</p>
-                        <div class="price">${p.PRICE.toLocaleString()} ₽</div>
-                        <button class="buy-btn" onclick="order('${p.NAME}')">Купить</button>
-                    </div>
-                `).join('');
-            } catch (e) {
-                console.error("Ошибка загрузки:", e);
-            }
+
+    let allProducts = [];
+
+    async function load() {
+        try {
+            const res = await fetch(API_URL);
+            allProducts = await res.json();
+            render(allProducts);
+        } catch (e) { console.error(e); }
+    }
+
+    function render(items) {
+        const container = document.getElementById('catalog');
+        container.innerHTML = items.map(p => `
+            <div class="card">
+                <img src="${p.IMAGE || 'https://via.placeholder.com/150'}" alt="${p.NAME}">
+                <h3>${p.NAME}</h3>
+                <p>${p.DESCRIPTION}</p>
+                <div class="price">${p.PRICE.toLocaleString()} ₽</div>
+                <button class="buy-btn" onclick="buy('${p.NAME}')">Купить</button>
+            </div>
+        `).join('');
+    }
+
+    function filterCat(cat) {
+        // Подсветка кнопок
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText === cat || (cat === 'Все' && btn.innerText === 'Все'));
+        });
+
+        if (cat === 'Все') {
+            render(allProducts);
+        } else {
+            const filtered = allProducts.filter(p => p.CATEGORY === cat);
+            render(filtered);
         }
+    }
 
-        function order(name) {
-            tg.sendData("Заказ: " + name);
-        }
+    function buy(name) {
+        tg.sendData("Order:" + name);
+        tg.close();
+    }
 
-        loadProducts();
-    </script>
+    load();
+</script>
 </body>
 </html>
